@@ -1,0 +1,38 @@
+# ==============================================================================
+# .gitignore untuk Hosting Streamlit Skripsi
+# ==============================================================================
+
+# PENTING: Cegah upload dataset 1.2 GB (GitHub membatasi max 100MB per file)
+DeFiTransLyzer_combined_clean_v3.csv
+*.csv
+!sample_test_batch.csv
+!sample_test_batch_complex.csv
+
+# Dokumen Skripsi, Proposal, dan Berkas Word/PDF/Excel
+*.docx
+*.pdf
+*.doc
+*.xlsx
+
+# Python bytecode, cache & environments
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+env/
+.venv/
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# CatBoost training artifact directory
+catboost_info/
+
+# Folder lokal dan database lokal
+saved_etherscan_data/
+decision_optimization/
+diagrams/
+output_plots/
+audit_history.db

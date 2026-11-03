@@ -1,0 +1,22 @@
+[
+    "nonce.nonce_coefficient_of_variation",
+    "cumulativeGasUsed.cumulativeGasUsed_mode",
+    "cumulativeGasUsed.cumulativeGasUsed_median",
+    "erc_20_Symbol_End_Is_Digit",
+    "erc_20_Symbol_Has_Digit",
+    "cumulativeGasUsed.cumulativeGasUsed_average",
+    "block_number",
+    "nonce.nonce_skewness",
+    "number_of_unique_from_address",
+    "gas_prices.gas_prices_skewness",
+    "erc_721_Symbol_Lowercase_Count",
+    "erc_20_Name_Has_Digit",
+    "cumulativeGasUsed.cumulativeGasUsed_standard_deviation",
+    "gas_efficiency",
+    "cumulativeGasUsed.cumulativeGasUsed_coefficient_of_variation",
+    "cumulative_gas_used",
+    "index",
+    "number_of_from_address",
+    "number_of_to_address",
+    "num_transaction"
+]
