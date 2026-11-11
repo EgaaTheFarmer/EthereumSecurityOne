@@ -252,7 +252,7 @@ DEFAULT_ETHERSCAN_API_KEY = "8D9TTTWT425JDDJNYBAFTN38ZE9QWJMF34"
 ETHERSCAN_DATA_DIR = os.path.join(BASE_DIR, "saved_etherscan_data")
 os.makedirs(ETHERSCAN_DATA_DIR, exist_ok=True)
 
-# Kamus Nama Fitur Apple Clean Look
+# Kamus Nama Fitur Apple Clean Look (19 Fitur Murni Perilaku)
 FEATURE_CLEAN_NAMES = {
     "nonce.nonce_coefficient_of_variation": "Variasi Nonce (CV)",
     "cumulativeGasUsed.cumulativeGasUsed_mode": "Modus Gas Kumulatif",
@@ -260,7 +260,6 @@ FEATURE_CLEAN_NAMES = {
     "erc_20_Symbol_End_Is_Digit": "Simbol ERC-20 Berakhiran Digit",
     "erc_20_Symbol_Has_Digit": "Simbol ERC-20 Memiliki Digit",
     "cumulativeGasUsed.cumulativeGasUsed_average": "Rata-rata Gas Kumulatif",
-    "block_number": "Nomor Blok Ethereum",
     "nonce.nonce_skewness": "Kemiringan Distribusi Nonce",
     "number_of_unique_from_address": "Jumlah Alamat Pengirim Unik",
     "gas_prices.gas_prices_skewness": "Kemiringan Harga Gas",
@@ -371,13 +370,24 @@ def update_etherscan_history_counts(fetch_id, fraud_cnt, legit_cnt):
 # --- 3. LOAD AI MODELS (CACHED) ---
 @st.cache_resource
 def load_ai_models():
-    if not os.path.exists(MODEL_PATH) or not os.path.exists(EXPLAINER_PATH) or not os.path.exists(FEATURES_PATH):
+    if not os.path.exists(MODEL_PATH) or not os.path.exists(FEATURES_PATH):
         return None, None, None
     with open(FEATURES_PATH, "r") as f:
         features = json.load(f)
+    # Pastikan murni 19 fitur perilaku (eliminasi block_number untuk cegah kebocoran temporal)
+    features = [f for f in features if f != "block_number"]
     model = CatBoostClassifier()
     model.load_model(MODEL_PATH)
-    explainer = joblib.load(EXPLAINER_PATH)
+    try:
+        explainer = shap.TreeExplainer(model)
+    except Exception:
+        if os.path.exists(EXPLAINER_PATH):
+            try:
+                explainer = joblib.load(EXPLAINER_PATH)
+            except Exception:
+                explainer = None
+        else:
+            explainer = None
     return model, explainer, features
 
 model, explainer, top_20_features = load_ai_models()
@@ -429,7 +439,7 @@ with st.sidebar:
     st.markdown("""
     <div style="background: #F5F5F7; border-radius: 12px; padding: 14px; font-size: 12px; color: #6E6E73; line-height: 1.5;">
         <strong style="color: #1D1D1F;">Status Sistem:</strong><br>
-        • Model: CatBoost (20 Fitur)<br>
+        • Model: CatBoost (19 Fitur Murni Perilaku)<br>
         • Engine: SHAP TreeExplainer<br>
         • Database: SQLite Active
     </div>
@@ -535,7 +545,7 @@ elif menu == "Inspeksi Transaksi Tunggal":
                 "nonce.nonce_coefficient_of_variation": 0.0, "cumulativeGasUsed.cumulativeGasUsed_mode": 21000.0,
                 "cumulativeGasUsed.cumulativeGasUsed_median": 21000.0, "erc_20_Symbol_End_Is_Digit": 0.0,
                 "erc_20_Symbol_Has_Digit": 0.0, "cumulativeGasUsed.cumulativeGasUsed_average": 21000.0,
-                "block_number": 4200000.0, "nonce.nonce_skewness": 0.0, "number_of_unique_from_address": 1.0,
+                "nonce.nonce_skewness": 0.0, "number_of_unique_from_address": 1.0,
                 "gas_prices.gas_prices_skewness": 0.0, "erc_721_Symbol_Lowercase_Count": 0.0, "erc_20_Name_Has_Digit": 0.0,
                 "cumulativeGasUsed.cumulativeGasUsed_standard_deviation": 0.0, "gas_efficiency": 1.0,
                 "cumulativeGasUsed.cumulativeGasUsed_coefficient_of_variation": 0.0, "cumulative_gas_used": 21000.0,
@@ -546,7 +556,7 @@ elif menu == "Inspeksi Transaksi Tunggal":
                 "nonce.nonce_coefficient_of_variation": 26.50, "cumulativeGasUsed.cumulativeGasUsed_mode": 15000000.0,
                 "cumulativeGasUsed.cumulativeGasUsed_median": 12500000.0, "erc_20_Symbol_End_Is_Digit": 0.0,
                 "erc_20_Symbol_Has_Digit": 0.0, "cumulativeGasUsed.cumulativeGasUsed_average": 13200000.0,
-                "block_number": 9200000.0, "nonce.nonce_skewness": 1.80, "number_of_unique_from_address": 120.0,
+                "nonce.nonce_skewness": 1.80, "number_of_unique_from_address": 120.0,
                 "gas_prices.gas_prices_skewness": 0.85, "erc_721_Symbol_Lowercase_Count": 0.0, "erc_20_Name_Has_Digit": 0.0,
                 "cumulativeGasUsed.cumulativeGasUsed_standard_deviation": 3100000.0, "gas_efficiency": 15.0,
                 "cumulativeGasUsed.cumulativeGasUsed_coefficient_of_variation": 0.23, "cumulative_gas_used": 15000000.0,
@@ -557,7 +567,7 @@ elif menu == "Inspeksi Transaksi Tunggal":
                 "nonce.nonce_coefficient_of_variation": 8.42, "cumulativeGasUsed.cumulativeGasUsed_mode": 85000.0,
                 "cumulativeGasUsed.cumulativeGasUsed_median": 1200000.0, "erc_20_Symbol_End_Is_Digit": 1.0,
                 "erc_20_Symbol_Has_Digit": 1.0, "cumulativeGasUsed.cumulativeGasUsed_average": 1450000.0,
-                "block_number": 6850000.0, "nonce.nonce_skewness": 14.20, "number_of_unique_from_address": 45.0,
+                "nonce.nonce_skewness": 14.20, "number_of_unique_from_address": 45.0,
                 "gas_prices.gas_prices_skewness": 2.80, "erc_721_Symbol_Lowercase_Count": 1.0, "erc_20_Name_Has_Digit": 1.0,
                 "cumulativeGasUsed.cumulativeGasUsed_standard_deviation": 980000.0, "gas_efficiency": 62.0,
                 "cumulativeGasUsed.cumulativeGasUsed_coefficient_of_variation": 0.68, "cumulative_gas_used": 1550000.0,
@@ -568,7 +578,7 @@ elif menu == "Inspeksi Transaksi Tunggal":
                 "nonce.nonce_coefficient_of_variation": 5.80, "cumulativeGasUsed.cumulativeGasUsed_mode": 65000.0,
                 "cumulativeGasUsed.cumulativeGasUsed_median": 850000.0, "erc_20_Symbol_End_Is_Digit": 1.0,
                 "erc_20_Symbol_Has_Digit": 1.0, "cumulativeGasUsed.cumulativeGasUsed_average": 920000.0,
-                "block_number": 7400000.0, "nonce.nonce_skewness": 8.50, "number_of_unique_from_address": 28.0,
+                "nonce.nonce_skewness": 8.50, "number_of_unique_from_address": 28.0,
                 "gas_prices.gas_prices_skewness": 3.10, "erc_721_Symbol_Lowercase_Count": 0.0, "erc_20_Name_Has_Digit": 1.0,
                 "cumulativeGasUsed.cumulativeGasUsed_standard_deviation": 650000.0, "gas_efficiency": 48.0,
                 "cumulativeGasUsed.cumulativeGasUsed_coefficient_of_variation": 0.71, "cumulative_gas_used": 980000.0,
@@ -577,7 +587,7 @@ elif menu == "Inspeksi Transaksi Tunggal":
 
         tx_identifier = st.text_input("Transaction Identifier / Hash:", value="0x4a9b8c7d6e5f1234a56b78c90d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e")
 
-        # Kelompokkan 20 Fitur ke dalam 3 Kategori yang Rapi
+        # Kelompokkan 19 Fitur Murni ke dalam 3 Kategori yang Rapi
         cat_gas = [
             "cumulativeGasUsed.cumulativeGasUsed_average", "cumulativeGasUsed.cumulativeGasUsed_median",
             "cumulativeGasUsed.cumulativeGasUsed_mode", "cumulativeGasUsed.cumulativeGasUsed_standard_deviation",
@@ -586,7 +596,7 @@ elif menu == "Inspeksi Transaksi Tunggal":
         ]
         cat_nonce = [
             "nonce.nonce_coefficient_of_variation", "nonce.nonce_skewness",
-            "block_number", "index", "num_transaction", "number_of_from_address",
+            "index", "num_transaction", "number_of_from_address",
             "number_of_to_address", "number_of_unique_from_address"
         ]
         cat_token = [
@@ -597,7 +607,7 @@ elif menu == "Inspeksi Transaksi Tunggal":
         with st.form("single_audit_form"):
             st.markdown("#### Parameter Transaksi On-Chain")
             
-            t1, t2, t3 = st.tabs(["Metrik Konsumsi Gas", "Karakteristik Nonce & Blok", " Metadata Token & Kontrak"])
+            t1, t2, t3 = st.tabs(["Metrik Konsumsi Gas", "Karakteristik Nonce & Urutan Transaksi", "Metadata Token & Kontrak"])
             input_data = {}
             
             with t1:
@@ -837,7 +847,6 @@ elif menu == "Audit Massal (Batch CSV)":
                             "erc_20_Symbol_End_Is_Digit": 1.0 if is_anomaly else 0.0,
                             "erc_20_Symbol_Has_Digit": 1.0 if is_anomaly else 0.0,
                             "cumulativeGasUsed.cumulativeGasUsed_average": 2500000.0 if not is_anomaly else 4000000.0,
-                            "block_number": 8500000.0,
                             "nonce.nonce_skewness": 12.0 if not is_anomaly else 28.0,
                             "number_of_unique_from_address": 1500.0 if not is_anomaly else 30.0,
                             "gas_prices.gas_prices_skewness": 6.5 if not is_anomaly else 0.5,
@@ -959,34 +968,124 @@ elif menu == "Audit Massal (Batch CSV)":
                 
             st.write("")
             
-            c_p1, c_p2 = st.columns(2)
+            c_p1, c_p2 = st.columns([1, 2.3])
             with c_p1:
                 st.markdown("""
                 <div class="apple-card">
                     <div class="apple-card-header">Proporsi Status Transaksi</div>
                 """, unsafe_allow_html=True)
-                fig_pie, ax_pie = plt.subplots(figsize=(4.5, 3.2))
+                fig_pie, ax_pie = plt.subplots(figsize=(3.2, 2.4), dpi=120)
                 lbls = [l for l, c in zip(['Fraud', 'Normal'], [sum_b['fraud'], sum_b['legit']]) if c > 0]
                 cnts = [c for c in [sum_b['fraud'], sum_b['legit']] if c > 0]
                 clrs = [col for col, c in zip(['#FF3B30', '#34C759'], [sum_b['fraud'], sum_b['legit']]) if c > 0]
-                ax_pie.pie(cnts, labels=lbls, autopct='%1.1f%%', startangle=90, colors=clrs, wedgeprops=dict(width=0.45, edgecolor='white', linewidth=2))
+                wedges, texts, autotexts = ax_pie.pie(
+                    cnts, 
+                    labels=lbls, 
+                    autopct='%1.1f%%', 
+                    startangle=90, 
+                    colors=clrs, 
+                    wedgeprops=dict(width=0.45, edgecolor='white', linewidth=2),
+                    textprops=dict(fontsize=8.5, fontweight='600')
+                )
+                for at in autotexts:
+                    at.set_fontsize(8.5)
+                    at.set_color('white')
+                    at.set_weight('bold')
+                plt.tight_layout()
                 st.pyplot(fig_pie)
-                plt.close()
+                plt.close(fig_pie)
+                
+                # Ringkasan status
+                st.markdown(f"""
+                <div style="margin-top: 6px; padding: 6px 10px; background: #F5F5F7; border-radius: 8px; font-size: 11.5px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                        <span style="color: #FF3B30; font-weight: 600;">● Fraud:</span>
+                        <span style="font-weight: 700;">{sum_b['fraud']:,} tx ({sum_b['fraud']/sum_b['total']*100:.1f}%)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #34C759; font-weight: 600;">● Normal:</span>
+                        <span style="font-weight: 700;">{sum_b['legit']:,} tx ({sum_b['legit']/sum_b['total']*100:.1f}%)</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
                 
             with c_p2:
                 st.markdown("""
                 <div class="apple-card">
-                    <div class="apple-card-header">Distribusi Skor Risiko Fraud</div>
+                    <div class="apple-card-header">Distribusi Probabilitas & Pembagian Data Transaksi</div>
                 """, unsafe_allow_html=True)
-                fig_hist, ax_hist = plt.subplots(figsize=(4.5, 3.2))
-                ax_hist.hist(df_res["Skor_Risiko (%)"], bins=10, range=(0, 100), color='#0071E3', edgecolor='white', alpha=0.85)
-                ax_hist.axvline(50.0, color='#FF3B30', linestyle='--', linewidth=1.5, label='Threshold (50%)')
-                ax_hist.set_xlabel("Probabilitas Fraud (%)", fontsize=10)
-                ax_hist.set_ylabel("Frekuensi Transaksi", fontsize=10)
-                ax_hist.legend(loc="upper right", frameon=False, fontsize=9)
-                st.pyplot(fig_hist)
-                plt.close()
+                
+                chart_tab1, chart_tab2 = st.tabs(["Kurva Terurut (S-Curve Pembagian Data)", "Fluktuasi Sekuensial per Transaksi"])
+                
+                with chart_tab1:
+                    sorted_probs = np.sort(df_res["Skor_Risiko (%)"].values)
+                    n_tx = len(sorted_probs)
+                    x_axis = np.arange(1, n_tx + 1)
+                    
+                    fig_line, ax_line = plt.subplots(figsize=(6.5, 3.1), dpi=130)
+                    
+                    # Area shading
+                    ax_line.fill_between(x_axis, 0, 50, color='#34C759', alpha=0.12, label='Zona Normal (< 50%)')
+                    ax_line.fill_between(x_axis, 50, 100, color='#FF3B30', alpha=0.12, label='Zona Fraud (≥ 50%)')
+                    
+                    # Garis utama
+                    ax_line.plot(x_axis, sorted_probs, color='#0071E3', linewidth=2.2, label='Probabilitas Fraud (%)', zorder=4)
+                    
+                    # Titik data transaksi
+                    point_colors = ['#FF3B30' if p >= 50.0 else '#34C759' for p in sorted_probs]
+                    ax_line.scatter(x_axis, sorted_probs, c=point_colors, s=28, edgecolors='white', linewidths=0.6, zorder=5)
+                    
+                    # Garis threshold 50%
+                    ax_line.axhline(50.0, color='#FF3B30', linestyle='--', linewidth=1.8, label='Threshold Keputusan (50%)', zorder=6)
+                    
+                    ax_line.set_xlabel("Frekuensi Transaksi (Data Terurut 1 s.d. N)", fontsize=9.5, fontweight='600', color='#1D1D1F')
+                    ax_line.set_ylabel("Probabilitas Fraud (%)", fontsize=9.5, fontweight='600', color='#1D1D1F')
+                    ax_line.set_ylim(-3, 103)
+                    ax_line.set_xlim(0.5, n_tx + 0.5)
+                    ax_line.grid(True, linestyle=':', alpha=0.45, color='#AEAEB2')
+                    
+                    ax_line.spines['top'].set_visible(False)
+                    ax_line.spines['right'].set_visible(False)
+                    ax_line.spines['left'].set_color('#D1D1D6')
+                    ax_line.spines['bottom'].set_color('#D1D1D6')
+                    ax_line.legend(loc="upper left", frameon=True, facecolor='white', edgecolor='#E5E5EA', fontsize=8.2)
+                    
+                    plt.tight_layout()
+                    st.pyplot(fig_line)
+                    plt.close(fig_line)
+                    
+                with chart_tab2:
+                    seq_probs = df_res["Skor_Risiko (%)"].values
+                    n_tx = len(seq_probs)
+                    x_seq = np.arange(1, n_tx + 1)
+                    
+                    fig_seq, ax_seq = plt.subplots(figsize=(6.5, 3.1), dpi=130)
+                    ax_seq.fill_between(x_seq, 0, 50, color='#34C759', alpha=0.12)
+                    ax_seq.fill_between(x_seq, 50, 100, color='#FF3B30', alpha=0.12)
+                    ax_seq.plot(x_seq, seq_probs, color='#5856D6', linewidth=1.8, linestyle='-', label='Probabilitas per Baris', zorder=4)
+                    
+                    seq_colors = ['#FF3B30' if p >= 50.0 else '#34C759' for p in seq_probs]
+                    ax_seq.scatter(x_seq, seq_probs, c=seq_colors, s=26, edgecolors='white', linewidths=0.6, zorder=5)
+                    ax_seq.axhline(50.0, color='#FF3B30', linestyle='--', linewidth=1.8, label='Threshold Keputusan (50%)', zorder=6)
+                    
+                    ax_seq.set_xlabel("Nomor Urut Transaksi (Sesuai File CSV)", fontsize=9.5, fontweight='600', color='#1D1D1F')
+                    ax_seq.set_ylabel("Probabilitas Fraud (%)", fontsize=9.5, fontweight='600', color='#1D1D1F')
+                    ax_seq.set_ylim(-3, 103)
+                    ax_seq.set_xlim(0.5, n_tx + 0.5)
+                    ax_seq.grid(True, linestyle=':', alpha=0.45, color='#AEAEB2')
+                    
+                    ax_seq.spines['top'].set_visible(False)
+                    ax_seq.spines['right'].set_visible(False)
+                    ax_seq.spines['left'].set_color('#D1D1D6')
+                    ax_seq.spines['bottom'].set_color('#D1D1D6')
+                    ax_seq.legend(loc="upper right", frameon=True, facecolor='white', edgecolor='#E5E5EA', fontsize=8.2)
+                    
+                    plt.tight_layout()
+                    st.pyplot(fig_seq)
+                    plt.close(fig_seq)
+                
+                st.caption("Garis merah putus-putus (50%) merupakan ambang batas klasifikasi model: transaksi di atas batas tergolong Fraud, di bawahnya tergolong Normal.")
                 st.markdown("</div>", unsafe_allow_html=True)
 
             st.markdown("""
