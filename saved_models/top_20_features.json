@@ -5,7 +5,6 @@
     "erc_20_Symbol_End_Is_Digit",
     "erc_20_Symbol_Has_Digit",
     "cumulativeGasUsed.cumulativeGasUsed_average",
-    "block_number",
     "nonce.nonce_skewness",
     "number_of_unique_from_address",
     "gas_prices.gas_prices_skewness",
